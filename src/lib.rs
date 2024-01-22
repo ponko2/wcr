@@ -63,7 +63,11 @@ pub fn run(args: Args) -> Result<()> {
     for filename in &args.files {
         match open(filename) {
             Err(err) => eprintln!("{filename}: {err}"),
-            Ok(_) => println!("Opened {filename}"),
+            Ok(file) => {
+                if let Ok(info) = count(file) {
+                    dbg!(info);
+                }
+            }
         }
     }
     Ok(())
@@ -77,10 +81,23 @@ fn open(filename: &str) -> Result<Box<dyn BufRead>> {
 }
 
 pub fn count(mut file: impl BufRead) -> Result<FileInfo> {
-    let num_lines = 0;
-    let num_words = 0;
-    let num_bytes = 0;
-    let num_chars = 0;
+    let mut num_lines = 0;
+    let mut num_words = 0;
+    let mut num_bytes = 0;
+    let mut num_chars = 0;
+    let mut buf = String::new();
+
+    loop {
+        let bytes = file.read_line(&mut buf)?;
+        if bytes == 0 {
+            break;
+        }
+        num_lines += 1;
+        num_words += buf.split_whitespace().count();
+        num_bytes += bytes;
+        num_chars += buf.chars().count();
+        buf.clear();
+    }
 
     Ok(FileInfo {
         num_lines,
